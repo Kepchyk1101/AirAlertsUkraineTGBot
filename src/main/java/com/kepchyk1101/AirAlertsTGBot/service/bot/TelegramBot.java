@@ -5,7 +5,6 @@ import com.kepchyk1101.AirAlertsTGBot.model.Region;
 import com.kepchyk1101.AirAlertsTGBot.model.RegionRepository;
 import com.kepchyk1101.AirAlertsTGBot.model.User;
 import com.kepchyk1101.AirAlertsTGBot.model.UserRepository;
-import com.kepchyk1101.AirAlertsTGBot.service.BotCommands;
 import com.kepchyk1101.AirAlertsTGBot.service.Consts;
 import com.kepchyk1101.AirAlertsTGBot.service.alerts.AlertsController;
 import com.kepchyk1101.AirAlertsTGBot.service.alerts.data.AlertData;
@@ -15,12 +14,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
-import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
-import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.io.IOException;
@@ -40,24 +36,17 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final BotConfig config;
     private final SimpleDateFormat formatter = new SimpleDateFormat("HH:mm");
 
+    private final String START_COMMAND = "/start";
+    private final String HELP_COMMAND = "/help";
+    private final String ADD_COMMAND = "/add";
+    private final String REMOVE_COMMAND = "/remove";
+    private final String SUBS_COMMAND = "/subs";
+
     /*
         Первичная настройка бота что-ли, хз как это назвать, но главное оно работает и я понимаю +- как xD
     */
     public TelegramBot(BotConfig config) {
-
         this.config = config;
-
-        List<BotCommand> botCommands = new ArrayList<>();
-
-        for (BotCommands command : BotCommands.values())
-            botCommands.add(new BotCommand(command.getCommand(), command.getDescription()));
-
-        try {
-            this.execute(new SetMyCommands(botCommands, new BotCommandScopeDefault(), null));
-        } catch (TelegramApiException e) {
-            log.error("error: " + e);
-        }
-
     }
 
 
@@ -83,11 +72,11 @@ public class TelegramBot extends TelegramLongPollingBot {
             long userChatId = update.getMessage().getChatId();
 
             switch (userMessage) {
-                case "/start" -> start_CommandInit(userChatId, update.getMessage().getChat().getFirstName());
-                case "/help" -> help_CommandInit(userChatId);
-                case "/add" -> add_CommandInit(userChatId);
-                case "/remove" -> remove_CommandInit(userChatId);
-                case "/subs" -> subs_CommandInit(userChatId);
+                case START_COMMAND -> start_CommandInit(userChatId, update.getMessage().getChat().getFirstName());
+                case HELP_COMMAND -> help_CommandInit(userChatId);
+                case ADD_COMMAND -> add_CommandInit(userChatId);
+                case REMOVE_COMMAND -> remove_CommandInit(userChatId);
+                case SUBS_COMMAND -> subs_CommandInit(userChatId);
             }
 
         /*
@@ -110,6 +99,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                     executeEditMarkup(BotMessages.removeAllButtons(userChatId, messageId));
                     executeSendMessage(BotMessages.createAnswer(userChatId, Consts.REGION_SUCCESSFULLY_ADDED_MESSAGE
                             .replace("{regionName}", Consts.ALL_REGIONS_ID)));
+                    log.info("Пользователь: {} успешно добавил {} в свой список уведомлений.", userChatId, Consts.ALL_REGIONS_ID);
                 } else
                     executeSendMessage(BotMessages.createAnswer(userChatId, Consts.REGION_ADDING_ERROR_MESSAGE));
 
@@ -122,6 +112,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                     executeEditMarkup(BotMessages.removeAllButtons(userChatId, messageId));
                     executeSendMessage(BotMessages.createAnswer(userChatId, Consts.REGION_SUCCESSFULLY_REMOVED_MESSAGE
                             .replace("{regionName}", Consts.ALL_REGIONS_ID)));
+                    log.info("Пользователь: {} успешно удалил {} со своего списка уведомлений.", userChatId, Consts.ALL_REGIONS_ID);
                 } else
                     executeSendMessage(BotMessages.createAnswer(userChatId, Consts.REGION_REMOVING_ERROR_MESSAGE
                             .replace("{regionName}", Consts.ALL_REGIONS_ID)));
@@ -148,6 +139,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                             userRepository.save(user);
                             executeSendMessage(BotMessages.createAnswer(userChatId, Consts.REGION_SUCCESSFULLY_ADDED_MESSAGE.replace("{regionName}", regionName)));
                             executeEditMarkup(BotMessages.updateAddButtons(userChatId, messageId, userRepository.findById(userChatId).get().getNotifiesList(), regionRepository.findAll()));
+                            log.info("Пользователь: {} успешно добавил {} в свой список уведомлений.", userChatId, regionName);
 
                         } else if (userNotifiesList_splitted.contains(String.valueOf(selectedRegionId))) {
                             executeSendMessage(BotMessages.createAnswer(userChatId, Consts.REGION_ADD_ERROR_MESSAGE
@@ -157,6 +149,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                             userRepository.save(user);
                             executeSendMessage(BotMessages.createAnswer(userChatId, Consts.REGION_SUCCESSFULLY_ADDED_MESSAGE.replace("{regionName}", regionName)));
                             executeEditMarkup(BotMessages.updateAddButtons(userChatId, messageId, userNotifiesList, regionRepository.findAll()));
+                            log.info("Пользователь: {} успешно добавил {} в свой список уведомлений.", userChatId, regionName);
                         }
 
                     }
@@ -188,6 +181,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                         executeEditMarkup(BotMessages.updateRemoveButtons(userChatId, messageId, userNotifiesList, regionRepository.findAll()));
                     executeSendMessage(BotMessages.createAnswer(userChatId, Consts.REGION_SUCCESSFULLY_REMOVED_MESSAGE
                             .replace("{regionName}", selectedRegion.getRegionName())));
+                    log.info("Пользователь: {} успешно удалил {} со своего списка уведомлений.", userChatId, selectedRegion.getRegionName());
                 }
             }
 
@@ -218,15 +212,16 @@ public class TelegramBot extends TelegramLongPollingBot {
         } else
             executeSendMessage(BotMessages.createAnswer(userChatId, Consts.ALREADY_REGISTERED_MESSAGE));
 
+        log.info("Пользователь: {} успешно воспользовался командой: {}", userChatId, START_COMMAND);
+
     }
 
     /*
         Инициализатор команды бота
     */
     private void help_CommandInit(long userChatId) {
-
         executeSendMessage(BotMessages.createAnswer(userChatId, Consts.HELP_MESSAGE));
-
+        log.info("Пользователь: {} успешно воспользовался командой: {}", userChatId, HELP_COMMAND);
     }
 
     /*
@@ -273,6 +268,8 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         }
 
+        log.info("Пользователь: {} успешно воспользовался командой: {}", userChatId, ADD_COMMAND);
+
     }
 
     /*
@@ -303,6 +300,8 @@ public class TelegramBot extends TelegramLongPollingBot {
             }
             executeSendMessage(BotMessages.createAnswer(userChatId, Consts.REGION_REMOVING_MESSAGE, Buttons, Consts.UNIQUE_REMOVE_ID));
         }
+
+        log.info("Пользователь: {} успешно воспользовался командой: {}", userChatId, REMOVE_COMMAND);
 
     }
 
@@ -335,6 +334,8 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         }
 
+        log.info("Пользователь: {} успешно воспользовался командой: {}", userChatId, SUBS_COMMAND);
+
     }
 
     /*
@@ -348,7 +349,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         user.setNotifiesList(Consts.NOTHING_ID);
 
         userRepository.save(user);
-        log.info("Зарегистрирован новый пользователь. userid: " + userChatId + " , firstName: " + firstName + " .");
+        log.info("Зарегистрирован новый пользователь. USERID: {}, FIRSTNAME: {}", userChatId, firstName);
 
     }
 
@@ -359,7 +360,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         try {
             execute(sendMessage);
         } catch (TelegramApiException e) {
-            log.error("error: " + e);
+            log.error("Ошибка отправки сообщения пользователю: " + e);
         }
     }
 
@@ -370,7 +371,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         try {
             execute(editMessageReplyMarkup);
         } catch (TelegramApiException e) {
-            log.error("error: " + e);
+            log.error("Ошибка редактирования клавиатуры: " + e);
         }
     }
 
@@ -409,12 +410,11 @@ public class TelegramBot extends TelegramLongPollingBot {
         int notifiedUsers = 0;
         long startTime = System.currentTimeMillis();
         for (User user : userRepository.findAll()) {
-            String userNotifiesList = user.getNotifiesList();
-            List<String> userNotifiesList_splitted = List.of(userNotifiesList.split(";"));
-            if (userNotifiesList_splitted.contains(Consts.ALL_ID)) {
+            List<String> userNotifiesList = List.of(user.getNotifiesList().split(";"));
+            if (userNotifiesList.contains(Consts.ALL_ID)) {
                 executeSendMessage(BotMessages.createAnswer(user.getId(), message));
                 notifiedUsers++;
-            } else if (userNotifiesList_splitted.contains(String.valueOf(region.getId()))) {
+            } else if (userNotifiesList.contains(String.valueOf(region.getId()))) {
                 executeSendMessage(BotMessages.createAnswer(user.getId(), message));
                 notifiedUsers++;
             }
@@ -433,8 +433,10 @@ public class TelegramBot extends TelegramLongPollingBot {
             AlertData alertData = AlertsController.getAlertData();
             log.info("Информация о тревогах получена.");
             updateInfoAlerts(alertData);
-        } catch (URISyntaxException | InterruptedException | IOException e) {
-            log.error("error: " + e);
+        } catch (URISyntaxException e) {
+            log.error("Ошибка создания ENDPOINT-URL: " + e);
+        } catch (InterruptedException | IOException e) {
+            log.error("Ошибка отправки запроса на сервера/преобразования json в object "  + e);
         }
     }
 

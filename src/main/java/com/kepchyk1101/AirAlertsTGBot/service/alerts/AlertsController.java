@@ -1,5 +1,6 @@
 package com.kepchyk1101.AirAlertsTGBot.service.alerts;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kepchyk1101.AirAlertsTGBot.service.alerts.data.AlertData;
 import com.kepchyk1101.AirAlertsTGBot.service.Consts;
