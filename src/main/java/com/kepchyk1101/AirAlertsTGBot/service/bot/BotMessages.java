@@ -1,7 +1,7 @@
 package com.kepchyk1101.AirAlertsTGBot.service.bot;
 
 import com.kepchyk1101.AirAlertsTGBot.model.Region;
-import com.kepchyk1101.AirAlertsTGBot.service.Consts;
+import com.kepchyk1101.AirAlertsTGBot.service.utils.Consts;
 import com.vdurmont.emoji.EmojiParser;
 import org.springframework.lang.Nullable;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;

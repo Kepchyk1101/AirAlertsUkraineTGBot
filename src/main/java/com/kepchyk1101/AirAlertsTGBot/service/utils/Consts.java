@@ -1,4 +1,4 @@
-package com.kepchyk1101.AirAlertsTGBot.service;
+package com.kepchyk1101.AirAlertsTGBot.service.utils;
 
 /*
     Банальные константы, чтобы 300 раз не писать одно и тоже, хотя лучше-бы я вынес именно сообщения куда в конфиг. файл, не правда ли? 🤔
@@ -83,10 +83,5 @@ public class Consts {
 
     public static final String ALL_ID = "all";
     public static final String NOTHING_ID = "nothing";
-
-
-    // API
-    public static final String ENDPOINT_URL = "https://alerts.com.ua/api/states?short";
-    public static final String API_KEY = System.getenv("ALERTS_APIKEY");
 
 }

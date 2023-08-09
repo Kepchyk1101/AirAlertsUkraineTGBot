@@ -5,7 +5,7 @@ import com.kepchyk1101.AirAlertsTGBot.model.Region;
 import com.kepchyk1101.AirAlertsTGBot.model.RegionRepository;
 import com.kepchyk1101.AirAlertsTGBot.model.User;
 import com.kepchyk1101.AirAlertsTGBot.model.UserRepository;
-import com.kepchyk1101.AirAlertsTGBot.service.Consts;
+import com.kepchyk1101.AirAlertsTGBot.service.utils.Consts;
 import com.kepchyk1101.AirAlertsTGBot.service.alerts.AlertsController;
 import com.kepchyk1101.AirAlertsTGBot.service.alerts.data.AlertData;
 import com.kepchyk1101.AirAlertsTGBot.service.alerts.data.AlertInnerData;
@@ -34,7 +34,8 @@ public class TelegramBot extends TelegramLongPollingBot {
     @Autowired private RegionRepository regionRepository;
 
     private final BotConfig config;
-    private final SimpleDateFormat formatter = new SimpleDateFormat("HH:mm");
+    private final SimpleDateFormat dateFormatter = new SimpleDateFormat("HH:mm");
+    private final AlertsController alertsController;
 
     private final String START_COMMAND = "/start";
     private final String HELP_COMMAND = "/help";
@@ -47,6 +48,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     */
     public TelegramBot(BotConfig config) {
         this.config = config;
+        alertsController = new AlertsController(config);
     }
 
 
@@ -404,7 +406,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         message = message
                 .replace("{regionName}", region.getRegionName())
-                .replace("{time}", formatter.format(date));
+                .replace("{time}", dateFormatter.format(date));
 
         log.info("Оповещение пользователей запущено ...");
         int notifiedUsers = 0;
@@ -425,12 +427,12 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     /*
-        Тут скрипт, который каждые 15 секунд получает обновлённые данные о тревогах.
+        Тут скрипт, который раз в N-ое время получает обновлённые данные о тревогах.
     */
-    @Scheduled(fixedDelay = 15000) // 1000 = 1 секунда
+    @Scheduled(fixedDelayString = "${fixedDelay.in.milliseconds}")
     public void getAlertData() {
         try {
-            AlertData alertData = AlertsController.getAlertData();
+            AlertData alertData = alertsController.getAlertData();
             log.info("Информация о тревогах получена.");
             updateInfoAlerts(alertData);
         } catch (URISyntaxException e) {

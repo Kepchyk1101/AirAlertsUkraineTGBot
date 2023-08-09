@@ -15,7 +15,13 @@ public class BotConfig {
     @Value("${bot.name}")
     String botName;
 
-    @Value(("${bot.token}"))
+    @Value("${bot.token}")
     String botToken;
+
+    @Value("${api.key}")
+    String apiKey;
+
+    @Value("${api.endpoint.url}")
+    String apiEndpointUrl;
 
 }

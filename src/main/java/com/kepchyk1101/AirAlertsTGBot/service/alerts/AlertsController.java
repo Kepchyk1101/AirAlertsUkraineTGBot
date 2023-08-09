@@ -1,9 +1,8 @@
 package com.kepchyk1101.AirAlertsTGBot.service.alerts;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.kepchyk1101.AirAlertsTGBot.config.BotConfig;
 import com.kepchyk1101.AirAlertsTGBot.service.alerts.data.AlertData;
-import com.kepchyk1101.AirAlertsTGBot.service.Consts;
 
 import java.io.IOException;
 import java.net.URI;
@@ -17,20 +16,23 @@ import java.net.http.HttpResponse;
 */
 public class AlertsController {
 
-    private static final ObjectMapper mapper = new ObjectMapper();
+    private final BotConfig config;
+    private static final ObjectMapper jsonMapper = new ObjectMapper();
     private static final HttpClient client = HttpClient.newHttpClient();
 
-    public static AlertData getAlertData() throws URISyntaxException, IOException, InterruptedException {
+    public AlertsController(BotConfig config) {
+        this.config = config;
+    }
+
+    public AlertData getAlertData() throws URISyntaxException, IOException, InterruptedException {
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(new URI(Consts.ENDPOINT_URL))
-                .header("X-API-Key", Consts.API_KEY)
+                .uri(new URI(config.getApiEndpointUrl()))
+                .header("X-API-Key", config.getApiKey())
                 .build();
         HttpResponse<String> httpResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-        String response = httpResponse.body();
-
-        return mapper.readValue(response, AlertData.class);
+        return jsonMapper.readValue(httpResponse.body(), AlertData.class);
 
     }
 
