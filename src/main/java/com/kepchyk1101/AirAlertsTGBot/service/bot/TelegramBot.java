@@ -1,10 +1,7 @@
 package com.kepchyk1101.AirAlertsTGBot.service.bot;
 
 import com.kepchyk1101.AirAlertsTGBot.config.BotConfig;
-import com.kepchyk1101.AirAlertsTGBot.model.Region;
-import com.kepchyk1101.AirAlertsTGBot.model.RegionRepository;
-import com.kepchyk1101.AirAlertsTGBot.model.User;
-import com.kepchyk1101.AirAlertsTGBot.model.UserRepository;
+import com.kepchyk1101.AirAlertsTGBot.model.*;
 import com.kepchyk1101.AirAlertsTGBot.service.utils.Consts;
 import com.kepchyk1101.AirAlertsTGBot.service.alerts.AlertsController;
 import com.kepchyk1101.AirAlertsTGBot.service.alerts.data.AlertData;
@@ -32,6 +29,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     @Autowired private UserRepository userRepository;
     @Autowired private RegionRepository regionRepository;
+    @Autowired private AdRepository adRepository;
 
     private final BotConfig config;
     private final SimpleDateFormat dateFormatter = new SimpleDateFormat("HH:mm");
@@ -129,7 +127,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                         String userNotifiesList = user.getNotifiesList();
                         Region selectedRegion = regionRepository.findByregionName(regionName);
                         long selectedRegionId = selectedRegion.getId();
-                        List<String> userNotifiesList_splitted = List.of(userNotifiesList.split(";"));
+                        List<String> userNotifiesListSplitted = List.of(userNotifiesList.split(";"));
 
                         if (userNotifiesList.equals(Consts.ALL_ID)) {
 
@@ -143,10 +141,10 @@ public class TelegramBot extends TelegramLongPollingBot {
                             executeEditMarkup(BotMessages.updateAddButtons(userChatId, messageId, userRepository.findById(userChatId).get().getNotifiesList(), regionRepository.findAll()));
                             log.info("Пользователь: {} успешно добавил {} в свой список уведомлений.", userChatId, regionName);
 
-                        } else if (userNotifiesList_splitted.contains(String.valueOf(selectedRegionId))) {
+                        } else if (userNotifiesListSplitted.contains(String.valueOf(selectedRegionId))) {
                             executeSendMessage(BotMessages.createAnswer(userChatId, Consts.REGION_ADD_ERROR_MESSAGE
                                     .replace("{regionName}", regionName)));
-                        } else if (!userNotifiesList_splitted.contains(String.valueOf(selectedRegionId))) {
+                        } else if (!userNotifiesListSplitted.contains(String.valueOf(selectedRegionId))) {
                             user.setNotifiesList(userNotifiesList += (";" + selectedRegionId));
                             userRepository.save(user);
                             executeSendMessage(BotMessages.createAnswer(userChatId, Consts.REGION_SUCCESSFULLY_ADDED_MESSAGE.replace("{regionName}", regionName)));
@@ -160,9 +158,9 @@ public class TelegramBot extends TelegramLongPollingBot {
             } else if (callBackQuery.contains(Consts.UNIQUE_REMOVE_ID)) {
                 User user = userRepository.findById(userChatId).get();
                 String userNotifiesList = user.getNotifiesList();
-                List<String> userNotifiesList_splitted = List.of(userNotifiesList.split(";"));
+                List<String> userNotifiesListSplitted = List.of(userNotifiesList.split(";"));
                 Region selectedRegion = regionRepository.findByregionName(callBackQuery.replace(Consts.UNIQUE_REMOVE_ID, ""));
-                if (userNotifiesList_splitted.contains(String.valueOf(selectedRegion.getId()))) {
+                if (userNotifiesListSplitted.contains(String.valueOf(selectedRegion.getId()))) {
                     userNotifiesList = userNotifiesList.replace(String.valueOf(selectedRegion.getId()), "");
 
                     if (userNotifiesList.contains(";;"))
@@ -254,11 +252,11 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         } else {
 
-            List<String> userNotifiesList_splitted = List.of(userNotifiesList.split(";"));
+            List<String> userNotifiesListSplitted = List.of(userNotifiesList.split(";"));
 
             for (Region region : regionRepository.findAll()) {
 
-                if (userNotifiesList_splitted.contains(String.valueOf(region.getId()))) continue;
+                if (userNotifiesListSplitted.contains(String.valueOf(region.getId()))) continue;
 
                 List<String> btn = new ArrayList<>();
                 btn.add(region.getRegionName());
@@ -288,13 +286,13 @@ public class TelegramBot extends TelegramLongPollingBot {
         } else if (userNotifiesList.equals(Consts.ALL_ID)) {
             executeSendMessage(BotMessages.createAnswer(userChatId, Consts.REGION_REMOVING_MESSAGE, List.of(List.of(Consts.ALL_REGIONS_ID)), Consts.UNIQUE_REMOVE_ID));
         } else {
-            List<String> userNotifiesList_splitted = List.of(userNotifiesList.split(";"));
+            List<String> userNotifiesListSplitted = List.of(userNotifiesList.split(";"));
             List<List<String>> Buttons = new ArrayList<>();
             List<String> all_btn = new ArrayList<>();
             all_btn.add(Consts.ALL_REGIONS_ID);
             Buttons.add(all_btn);
             for (Region region : regionRepository.findAll()) {
-                if (userNotifiesList_splitted.contains(String.valueOf(region.getId()))) {
+                if (userNotifiesListSplitted.contains(String.valueOf(region.getId()))) {
                     List<String> btn = new ArrayList<>();
                     btn.add(region.getRegionName());
                     Buttons.add(btn);
@@ -327,8 +325,8 @@ public class TelegramBot extends TelegramLongPollingBot {
         } else {
 
             String regionNames = "";
-            List<String> userNotifiesList_splitted = List.of(userNotifiesList.split(";"));
-            for (String id : userNotifiesList_splitted)
+            List<String> userNotifiesListSplitted = List.of(userNotifiesList.split(";"));
+            for (String id : userNotifiesListSplitted)
                 regionNames += "    · " + regionRepository.findById(Long.parseLong(id)).get().getRegionName() + "\n";
 
             executeSendMessage(BotMessages.createAnswer(userChatId, Consts.REGION_LIST_MESSAGE
@@ -440,6 +438,35 @@ public class TelegramBot extends TelegramLongPollingBot {
         } catch (InterruptedException | IOException e) {
             log.error("Ошибка отправки запроса на сервера/преобразования json в object "  + e);
         }
+    }
+
+    @Scheduled(fixedDelay = 60000)
+    public void sendAds() {
+
+        log.info("Рассылка заготовленной информации ...");
+        int notifiedUsers = 0;
+        for (Ad ad : adRepository.findAll()) {
+            String recipients = ad.getRecipients();
+            String adMessage = ad.getAd();
+            if (recipients.equals("all")) {
+                for (User user : userRepository.findAll()) {
+                    executeSendMessage(BotMessages.createAnswer(user.getId(), adMessage));
+                    notifiedUsers++;
+                }
+            } else {
+                String[] recipientsArray = recipients.split(";");
+                for (String recipient : recipientsArray) {
+                    executeSendMessage(BotMessages.createAnswer((Long.parseLong(recipient)), adMessage));
+                    notifiedUsers++;
+                }
+            }
+            log.info("Заготовленной информацией уведомлено: {} пользователей.", notifiedUsers);
+            log.info("Удаление заготовленной информации ...");
+            adRepository.delete(ad);
+            log.info("Заготовленная информация удалена.");
+            break;
+        }
+
     }
 
 }
