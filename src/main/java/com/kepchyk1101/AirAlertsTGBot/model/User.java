@@ -14,7 +14,8 @@ public class User {
 
     @Id
     private Long id;
-    private String firstName;
+    private String username;
     private String notifiesList;
+    private String type;
 
 }

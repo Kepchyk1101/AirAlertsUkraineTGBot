@@ -1,23 +1,16 @@
 package com.kepchyk1101.AirAlertsTGBot.service.alerts.data;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
 public class AlertInnerData {
 
     private int id;
     private boolean alert;
-
-    private AlertInnerData() {}
-
-    public AlertInnerData(int id, boolean alert) {
-        this.id = id;
-        this.alert = alert;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public boolean isAlert() {
-        return alert;
-    }
+    private String changed;
 
 }

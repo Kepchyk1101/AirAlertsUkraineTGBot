@@ -14,5 +14,6 @@ public class Region {
     private Long id;
     private String regionName;
     private boolean alertStatus;
+    private String changedAt;
 
 }

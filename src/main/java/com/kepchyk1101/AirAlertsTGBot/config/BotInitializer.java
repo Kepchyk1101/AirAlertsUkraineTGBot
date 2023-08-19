@@ -21,6 +21,7 @@ public class BotInitializer {
 
         log.info("Регистрация бота ...");
         TelegramBotsApi telegramBotsApi = new TelegramBotsApi(DefaultBotSession.class);
+        log.info("Бот успешно зарегистрирован.");
         try {
             telegramBotsApi.registerBot(bot);
         } catch (TelegramApiException e) {
